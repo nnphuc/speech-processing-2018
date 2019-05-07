@@ -2,48 +2,37 @@
 
 import torch
 import torch.utils.data
-import argparse
-from tqdm import tqdm
-
 from dataset import collate_fn, TranslationDataset
 from transformer.Translator import Translator
-from preprocess import read_instances_from_file, convert_instance_to_idx_seq
+from preprocess import read_instances_from_sent, convert_instance_to_idx_seq
+import speech_recognition
+import nltk
 
-def main():
-    '''Main Function'''
 
-    parser = argparse.ArgumentParser(description='translate.py')
+class Opt:
+    vocab = "data/dict.pt"
+    batch_size = 1
+    cuda = True
+    model = "model.chkpt"
+    beam_size = 5
+    n_best = 1
 
-    parser.add_argument('-model', required=True,
-                        help='Path to model .pt file')
-    parser.add_argument('-src', required=True,
-                        help='Source sequence to decode (one line per sequence)')
-    parser.add_argument('-vocab', required=True,
-                        help='Source sequence to decode (one line per sequence)')
-    parser.add_argument('-output', default='pred.txt',
-                        help="""Path to output the predictions (each line will
-                        be the decoded sequence""")
-    parser.add_argument('-beam_size', type=int, default=5,
-                        help='Beam size')
-    parser.add_argument('-batch_size', type=int, default=30,
-                        help='Batch size')
-    parser.add_argument('-n_best', type=int, default=1,
-                        help="""If verbose is set, will output the n_best
-                        decoded sentences""")
-    parser.add_argument('-no_cuda', action='store_true')
 
-    opt = parser.parse_args()
-    opt.cuda = not opt.no_cuda
+opt = Opt()
+preprocess_data = torch.load(opt.vocab)
+preprocess_settings = preprocess_data['settings']
+sent = "hello , how are you ?"
 
-    # Prepare DataLoader
-    preprocess_data = torch.load(opt.vocab)
-    preprocess_settings = preprocess_data['settings']
-    test_src_word_insts = read_instances_from_file(
-        opt.src,
+translator = Translator(opt)
+
+
+def translate(sent):
+    input_word_insts = read_instances_from_sent(
+        sent,
         preprocess_settings.max_word_seq_len,
         preprocess_settings.keep_case)
     test_src_insts = convert_instance_to_idx_seq(
-        test_src_word_insts, preprocess_data['dict']['src'])
+        input_word_insts, preprocess_data['dict']['src'])
 
     test_loader = torch.utils.data.DataLoader(
         TranslationDataset(
@@ -53,22 +42,69 @@ def main():
         batch_size=opt.batch_size,
         collate_fn=collate_fn)
 
-    translator = Translator(opt)
+    for batch in test_loader:
+        all_hyp, all_scores = translator.translate_batch(*batch)
 
-    with open(opt.output, 'w', encoding="utf-8") as f:
-        for batch in tqdm(test_loader, mininterval=2, desc='  - (Test)', leave=False):
-            all_hyp, all_scores = translator.translate_batch(*batch)
-            
-            for src_seqs, idx_seqs in zip(batch[0].numpy(),all_hyp):
-                #print(src_seqs, idx_seqs)
-                f.write("\n")
-                src = ' '.join([test_loader.dataset.src_idx2word[idx] for idx in src_seqs])
-                f.write("### "+ src + "\n")
-                for idx_seq in idx_seqs:
-         
-                    pred_line = ' '.join([test_loader.dataset.tgt_idx2word[idx] for idx in idx_seq])
-                    f.write(">>> "+pred_line + '\n')
-    print('[Info] Finished.')
+        for src_seqs, idx_seqs in zip(batch[0].numpy(), all_hyp):
 
-if __name__ == "__main__":
-    main()
+            for idx_seq in idx_seqs:
+                pred_line = ' '.join([test_loader.dataset.tgt_idx2word[idx] for idx in idx_seq])
+                print(pred_line)
+
+
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QDesktopWidget
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import pyqtSlot
+
+
+class App(QWidget):
+
+    def __init__(self):
+        super().__init__()
+        self.title = 'PyQt5 button - pythonspot.com'
+        self.left = 10
+        self.top = 10
+        self.width = 320
+        self.height = 200
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+
+        centerPoint = QDesktopWidget().availableGeometry().center()
+        self.move(centerPoint)
+        button = QPushButton('PyQt5 button', self)
+        button.setToolTip('This is an example button')
+        button.move(100, 70)
+        button.clicked.connect(self.on_click)
+
+        self.show()
+
+    @pyqtSlot()
+    def on_click(self):
+        print('PyQt5 button click')
+        import speech_recognition as sr
+
+        # obtain audio from the microphone
+        r = sr.Recognizer()
+        with sr.Microphone() as source:
+            print("Please wait. Calibrating microphone...")
+            # listen for 5 seconds and create the ambient noise energy level
+            r.adjust_for_ambient_noise(source, duration=5)
+            print("Say something!")
+            audio = r.listen(source)
+
+            # recognize speech using Sphinx
+        try:
+            print("Sphinx thinks you said '" + r.recognize_sphinx(audio) + "'")
+        except sr.UnknownValueError:
+            print("Sphinx could not understand audio")
+        except sr.RequestError as e:
+            print("Sphinx error; {0}".format(e))
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = App()
+    sys.exit(app.exec_())

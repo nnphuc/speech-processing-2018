@@ -1,18 +1,3 @@
 
-### <s> how do you do this ? </s> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank>
->>> sao anh làm được ? </s>
-
-### <s> what 's your name ? </s> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank>
->>> tên anh là gì ? </s>
-
-### <s> where are you from ? </s> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank>
->>> anh từ đâu đến ? </s>
-
-### <s> we are studying speech processing </s> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank>
->>> chúng tôi đang nói về sự kiện . </s>
-
-### <s> i want to go to school </s> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank> <blank>
->>> tôi muốn đi học . </s>
-
-### <s> foreign intelligence agencies had repeatedly warned that attacks were being planned , with one such warning coming just hours before the bombings . </s>
->>> cảnh sát đã bị bắt cóc bởi một vụ án , đã được báo cáo trước khi bị bắt cóc . </s>
+### <s> hello , how are you ? </s>
+>>> chào , anh khoẻ không ? </s>
