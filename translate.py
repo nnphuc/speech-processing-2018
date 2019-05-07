@@ -5,8 +5,10 @@ import torch.utils.data
 from dataset import collate_fn, TranslationDataset
 from transformer.Translator import Translator
 from preprocess import read_instances_from_sent, convert_instance_to_idx_seq
-import speech_recognition
-import nltk
+import speech_recognition as sr
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QDesktopWidget, QLabel
+from PyQt5.QtCore import pyqtSlot
 
 
 class Opt:
@@ -14,14 +16,13 @@ class Opt:
     batch_size = 1
     cuda = True
     model = "model.chkpt"
-    beam_size = 5
+    beam_size = 1
     n_best = 1
 
 
 opt = Opt()
 preprocess_data = torch.load(opt.vocab)
 preprocess_settings = preprocess_data['settings']
-sent = "hello , how are you ?"
 
 translator = Translator(opt)
 
@@ -48,25 +49,22 @@ def translate(sent):
         for src_seqs, idx_seqs in zip(batch[0].numpy(), all_hyp):
 
             for idx_seq in idx_seqs:
+                idx_seq = filter(lambda x: x > 3, idx_seq)
                 pred_line = ' '.join([test_loader.dataset.tgt_idx2word[idx] for idx in idx_seq])
-                print(pred_line)
-
-
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QDesktopWidget
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot
+                return pred_line
 
 
 class App(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.title = 'PyQt5 button - pythonspot.com'
+        self.title = 'Demo speech and translate example'
         self.left = 10
         self.top = 10
-        self.width = 320
-        self.height = 200
+        self.width = 620
+        self.height = 300
+        self.label = None
+        self.result = None
         self.initUI()
 
     def initUI(self):
@@ -74,30 +72,42 @@ class App(QWidget):
 
         centerPoint = QDesktopWidget().availableGeometry().center()
         self.move(centerPoint)
-        button = QPushButton('PyQt5 button', self)
-        button.setToolTip('This is an example button')
+        button = QPushButton('Speech', self)
+        button.setToolTip('click here to speech')
         button.move(100, 70)
         button.clicked.connect(self.on_click)
+        label = QLabel(self)
+        label.move(30, 100)
+        label.setText("<strong>click to speech <strong>")
+        self.label = label
+        label.move(30, 100)
+        label.setFixedWidth(550)
+
+        result = QLabel(self)
+        result.move(30, 130)
+        result.setFixedWidth(550)
+        self.result = result
 
         self.show()
 
     @pyqtSlot()
     def on_click(self):
         print('PyQt5 button click')
-        import speech_recognition as sr
 
-        # obtain audio from the microphone
         r = sr.Recognizer()
+
         with sr.Microphone() as source:
-            print("Please wait. Calibrating microphone...")
+            self.label.setText("Please wait. Calibrating microphone...")
             # listen for 5 seconds and create the ambient noise energy level
-            r.adjust_for_ambient_noise(source, duration=5)
-            print("Say something!")
+            r.adjust_for_ambient_noise(source, duration=1)
+            self.label.setText("Say something!")
             audio = r.listen(source)
 
             # recognize speech using Sphinx
         try:
-            print("Sphinx thinks you said '" + r.recognize_sphinx(audio) + "'")
+            text = r.recognize_google(audio)
+            self.label.setText("<p style='color: red'>you said '" + text + "' </p>")
+            self.result.setText("<p style='color: blue'>" + translate(text) + "</p>")
         except sr.UnknownValueError:
             print("Sphinx could not understand audio")
         except sr.RequestError as e:
