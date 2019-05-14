@@ -200,7 +200,7 @@ def main():
     parser.add_argument('-step_epoch', type=int, default=2000)
     
     parser.add_argument('-epoch', type=int, default=100)
-    parser.add_argument('-batch_size', type=int, default=8)
+    parser.add_argument('-batch_size', type=int, default=64)
 
     #parser.add_argument('-d_word_vec', type=int, default=512)
     parser.add_argument('-d_model', type=int, default=100)

@@ -9,7 +9,7 @@ import speech_recognition as sr
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QDesktopWidget, QLabel
 from PyQt5.QtCore import pyqtSlot
-
+import nltk
 
 class Opt:
     vocab = "data/dict.pt"
@@ -98,7 +98,7 @@ class App(QWidget):
 
         with sr.Microphone() as source:
             self.label.setText("Please wait. Calibrating microphone...")
-            # listen for 5 seconds and create the ambient noise energy level
+            # listen for 3 seconds and create the ambient noise energy level
             r.adjust_for_ambient_noise(source, duration=1)
             self.label.setText("Say something!")
             audio = r.listen(source)
@@ -106,7 +106,11 @@ class App(QWidget):
             # recognize speech using Sphinx
         try:
             text = r.recognize_google(audio)
+            # text = r.recognize_sphinx(audio)
             self.label.setText("<p style='color: red'>you said '" + text + "' </p>")
+            token = nltk.word_tokenize(text)
+            # print(token)
+            text = " ".join(token)
             self.result.setText("<p style='color: blue'>" + translate(text) + "</p>")
         except sr.UnknownValueError:
             print("Sphinx could not understand audio")
